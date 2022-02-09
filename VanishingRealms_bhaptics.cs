@@ -14,10 +14,13 @@ namespace VanishingRealms_bhaptics
     public class VanishingRealms_bhaptics : MelonMod
     {
         public static TactsuitVR tactsuitVr;
+        public static GameObject rightHandWeapon;
+        public static GameObject leftHandWeapon;
         public static bool bladeRightHand = true;
         public static bool shieldRightHand = false;
         public static bool bowRightHand = false;
         public static bool wandRightHand = true;
+        public static bool lastControllerRight = true;
 
         public override void OnApplicationStart()
         {
@@ -33,8 +36,18 @@ namespace VanishingRealms_bhaptics
             [HarmonyPostfix]
             public static void Postfix(Weapon __instance)
             {
-                //tactsuitVr.LOG("BladeHit: " + __instance.toolID.ToString() + " " + __instance.isTwoHanded.ToString());
-                tactsuitVr.Recoil("Blade", bladeRightHand);
+                /*
+                tactsuitVr.LOG("BladeHit: " + __instance.name);
+                tactsuitVr.LOG("BladeHit: " + __instance.toolID);
+                tactsuitVr.LOG("BladeHit: " + rightHandWeapon.name);
+                tactsuitVr.LOG("BladeHit: " + __instance.gameObject.name);
+                tactsuitVr.LOG("BladeHit: " + __instance.gameObject.gameObject.name);
+                if (__instance == rightHandWeapon)
+                    bladeRightHand = true;
+                else bladeRightHand = false;
+                tactsuitVr.LOG("BladeHit: " + bladeRightHand.ToString());
+                */
+                //tactsuitVr.Recoil("Blade", bladeRightHand);
             }
         }
 
@@ -44,8 +57,13 @@ namespace VanishingRealms_bhaptics
             [HarmonyPostfix]
             public static void Postfix(Weapon __instance)
             {
+                /*
+                if (__instance == rightHandWeapon)
+                    bladeRightHand = true;
+                else bladeRightHand = false;
                 //tactsuitVr.LOG("HandleHit: " + __instance.toolID.ToString() + " " + __instance.isTwoHanded.ToString());
                 tactsuitVr.Recoil("Blade", bladeRightHand);
+                */
             }
         }
 
@@ -55,7 +73,12 @@ namespace VanishingRealms_bhaptics
             [HarmonyPostfix]
             public static void Postfix(WeaponBow __instance)
             {
+                /*
                 //tactsuitVr.LOG("BowShoot: ");
+                if (__instance == rightHandWeapon)
+                    bowRightHand = true;
+                else bowRightHand = false;
+                */
                 tactsuitVr.Recoil("Bow", !bowRightHand);
             }
         }
@@ -132,18 +155,23 @@ namespace VanishingRealms_bhaptics
             [HarmonyPostfix]
             public static void Postfix(PlayerBody __instance, DamageInfo damageInfo)
             {
-                if (damageInfo.hitLocationName == HitLocationName.Weapon) { tactsuitVr.Recoil("Blade", bladeRightHand, true, 0.5f); return; }
-                if (damageInfo.hitLocationName == HitLocationName.Shield) { tactsuitVr.Recoil("Blade", shieldRightHand, true, 0.5f); return; }
-                if (damageInfo.hitLocationName == HitLocationName.ArmLeft) { tactsuitVr.PlaybackHaptics("Recoil_L"); return; }
-                if (damageInfo.hitLocationName == HitLocationName.ArmRight) { tactsuitVr.PlaybackHaptics("Recoil_R"); return; }
-                if (damageInfo.hitLocationName == HitLocationName.HandLeft) { tactsuitVr.PlaybackHaptics("RecoilHands_L"); return; }
-                if (damageInfo.hitLocationName == HitLocationName.HandRight) { tactsuitVr.PlaybackHaptics("RecoilHands_R"); return; }
+                string weaponName = "Impact";
+                if ((damageInfo.attackingToolId == ToolID.sword) | (damageInfo.attackingToolId == ToolID.axe) | (damageInfo.attackingToolId == ToolID.bow) | (damageInfo.attackingToolId == ToolID.dagger)) weaponName = "BladeHit";
+                if ((damageInfo.attackingToolId == ToolID.spear) | (damageInfo.attackingToolId == ToolID.arrow)) weaponName = "BulletHit";
+                if (damageInfo.hitLocationName == HitLocationName.Weapon) { return; }
+                if (damageInfo.hitLocationName == HitLocationName.Shield) { return; }
+                if (damageInfo.hitLocationName == HitLocationName.ArmLeft) { tactsuitVr.hitArm(false); }
+                if (damageInfo.hitLocationName == HitLocationName.ArmRight) { tactsuitVr.hitArm(true); }
+                if (damageInfo.hitLocationName == HitLocationName.HandLeft) { tactsuitVr.hitHand(false); }
+                if (damageInfo.hitLocationName == HitLocationName.HandRight) { tactsuitVr.hitHand(true); }
+                if (damageInfo.hitLocationName == HitLocationName.LegLeft) { tactsuitVr.PlaybackHaptics("HitFoot_L"); }
+                if (damageInfo.hitLocationName == HitLocationName.LegRight) { tactsuitVr.PlaybackHaptics("HitFoot_R"); }
                 if (damageInfo.damage == 0f) return;
 
                 //tactsuitVr.LOG("Damage: " + damageInfo.hitLocationName.ToString() + " " + damageInfo.hitLocation.x.ToString() + " " + __instance.transform.position.x.ToString());
                 var angleShift = getAngleAndShift(__instance.transform, damageInfo.hitLocation);
-                if (damageInfo.hitLocationName == HitLocationName.Head) { tactsuitVr.HeadShot("Impact", angleShift.Key); return; }
-                tactsuitVr.PlayBackHit("Impact", angleShift.Key, angleShift.Value);
+                if (damageInfo.hitLocationName == HitLocationName.Head) { tactsuitVr.HeadShot(weaponName, angleShift.Key); return; }
+                tactsuitVr.PlayBackHit(weaponName, angleShift.Key, angleShift.Value);
             }
         }
 
@@ -164,7 +192,7 @@ namespace VanishingRealms_bhaptics
             [HarmonyPostfix]
             public static void Postfix()
             {
-                tactsuitVr.PlaybackHaptics("Healing");
+                //tactsuitVr.PlaybackHaptics("Healing");
             }
         }
 
@@ -197,20 +225,51 @@ namespace VanishingRealms_bhaptics
             public static void Postfix(ItemPotion __instance)
             {
                 tactsuitVr.PlaybackHaptics("Drinking");
-                if (__instance.potionType == PotionType.health) tactsuitVr.PlaybackHaptics("Healing");
+                //if (__instance.potionType == PotionType.health) tactsuitVr.PlaybackHaptics("Healing");
                 if (__instance.potionType == PotionType.poison) tactsuitVr.PlaybackHaptics("Poison");
             }
         }
 
-        [HarmonyPatch(typeof(TheHapticsManager), "Vibrate", new Type[] { typeof(int), typeof(float), typeof(float) })]
+        [HarmonyPatch(typeof(TheHapticsManager), "PlaySinglePulse", new Type[] { typeof(int), typeof(uint), typeof(float) })]
         public class bhaptics_Vibrate
         {
             [HarmonyPostfix]
             public static void Postfix(int controllerIndex)
             {
-                tactsuitVr.LOG("Vibrate int: " + controllerIndex.ToString());
+                if (controllerIndex == 2) lastControllerRight = true;
+                else lastControllerRight = false;
             }
         }
+
+        [HarmonyPatch(typeof(TheHapticsManager), "PlayHapticPulse", new Type[] { typeof(GameObject), typeof(PulseProfile.PulseType) })]
+        public class bhaptics_HapticPulse
+        {
+            [HarmonyPostfix]
+            public static void Postfix(PulseProfile.PulseType pulseType)
+            {
+                if ( (pulseType == PulseProfile.PulseType.hitWeapon) |
+                    (pulseType == PulseProfile.PulseType.hitArmor) |
+                    (pulseType == PulseProfile.PulseType.hitBody) |
+                    (pulseType == PulseProfile.PulseType.hitShield) |
+                    (pulseType == PulseProfile.PulseType.hitBreakable) |
+                    (pulseType == PulseProfile.PulseType.hitForceField) )
+                        tactsuitVr.Recoil("Blade", lastControllerRight);
+                if ( (pulseType == PulseProfile.PulseType.shieldBlockArrow) | (pulseType == PulseProfile.PulseType.shieldBlockWeapon) ) tactsuitVr.Block(lastControllerRight);
+                //tactsuitVr.LOG("HapticPulse: " + pulseType.ToString());
+                if (pulseType == PulseProfile.PulseType.foodBite) tactsuitVr.PlaybackHaptics("Eating");
+            }
+        }
+
+        [HarmonyPatch(typeof(TheHapticsManager), "BlockHapticPulse", new Type[] { typeof(GameObject) })]
+        public class bhaptics_BlockHaptics
+        {
+            [HarmonyPostfix]
+            public static void Postfix()
+            {
+                tactsuitVr.LOG("BlockHaptics");
+            }
+        }
+
 
         [HarmonyPatch(typeof(Grabber), "Grab", new Type[] { typeof(GameObject), typeof(bool), typeof(bool) })]
         public class bhaptics_PlayerGrab
@@ -218,6 +277,12 @@ namespace VanishingRealms_bhaptics
             [HarmonyPostfix]
             public static void Postfix(Grabber __instance, GameObject item)
             {
+                if ( (item.name.Contains("Sword")) | (item.name.Contains("Shield")) | (item.name.Contains("Bow")) | (item.name.Contains("Axe")) | (item.name.Contains("Hammer")) )
+                {
+                    tactsuitVr.LOG("Grab: " + item.name);
+                    if (__instance.controllerIndex == 2) rightHandWeapon = item;
+                    else leftHandWeapon = item;
+                }
                 if (item.name.Contains("Sword")) { bladeRightHand = (__instance.controllerIndex == 2); return; }
                 if (item.name.Contains("Shield")) { shieldRightHand = (__instance.controllerIndex == 2); return; }
                 if (item.name.Contains("Bow")) { bowRightHand = (__instance.controllerIndex == 2); return; }

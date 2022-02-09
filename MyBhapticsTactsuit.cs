@@ -111,7 +111,7 @@ namespace MyBhapticsTactsuit
             bHaptics.SubmitRegistered(key, key, scaleOption, rotationOption);
         }
 
-        public void Recoil(string weaponName, bool isRightHand, bool block = false, float intensity = 1.0f)
+        public void Recoil(string weaponName, bool isRightHand, float intensity = 1.0f)
         {
             // weaponName is a parameter that will go into the vest feedback pattern name
             // isRightHand is just which side the feedback is on
@@ -126,12 +126,40 @@ namespace MyBhapticsTactsuit
             if (isRightHand) { postfix = "_R"; }
 
             // stitch together pattern names for Arm and Hand recoil
-            string keyHands = "RecoilHands" + postfix;
-            string keyArm = "Recoil" + postfix;
+            string keyHands = "RecoilHand" + postfix;
+            string keyArm = "RecoilArm" + postfix;
             // vest pattern name contains the weapon name. This way, you can quickly switch
             // between swords, pistols, shotguns, ... by just changing the shoulder feedback
             // and scaling via the intensity for arms and hands
             string keyVest = "Recoil" + weaponName + "Vest" + postfix;
+            
+            bHaptics.SubmitRegistered(keyHands, keyHands, scaleOption, rotationFront);
+            bHaptics.SubmitRegistered(keyArm, keyArm, scaleOption, rotationFront);
+            bHaptics.SubmitRegistered(keyVest, keyVest, scaleOption, rotationFront);
+        }
+
+        public void Block(bool isRightHand)
+        {
+            // weaponName is a parameter that will go into the vest feedback pattern name
+            // isRightHand is just which side the feedback is on
+            // intensity should usually be between 0 and 1
+
+            float duration = 1.0f;
+            float intensity = 1.0f;
+            var scaleOption = new bHaptics.ScaleOption(intensity, duration);
+            // the function needs some rotation if you want to give the scale option as well
+            var rotationFront = new bHaptics.RotationOption(0f, 0f);
+            // make postfix according to parameter
+            string postfix = "_L";
+            if (isRightHand) { postfix = "_R"; }
+
+            // stitch together pattern names for Arm and Hand recoil
+            string keyHands = "RecoilHand" + postfix;
+            string keyArm = "RecoilArm" + postfix;
+            // vest pattern name contains the weapon name. This way, you can quickly switch
+            // between swords, pistols, shotguns, ... by just changing the shoulder feedback
+            // and scaling via the intensity for arms and hands
+            string keyVest = "BlockVest" + postfix;
             bHaptics.SubmitRegistered(keyHands, keyHands, scaleOption, rotationFront);
             bHaptics.SubmitRegistered(keyArm, keyArm, scaleOption, rotationFront);
             bHaptics.SubmitRegistered(keyVest, keyVest, scaleOption, rotationFront);
@@ -162,6 +190,36 @@ namespace MyBhapticsTactsuit
             bHaptics.SubmitRegistered(keyHands, keyHands, scaleOption, rotationFront);
             bHaptics.SubmitRegistered(keyArm, keyArm, scaleOption, rotationFront);
             bHaptics.SubmitRegistered(keyVest, keyVest, scaleOption, rotationFront);
+        }
+
+        public void hitHand(bool isRight)
+        {
+            float duration = 1.0f;
+            float intensity = 0.5f;
+            var scaleOption = new bHaptics.ScaleOption(intensity, duration);
+            var rotationFront = new bHaptics.RotationOption(0f, 0f);
+            string postfix = "_L";
+            if (isRight) { postfix = "_R"; }
+
+            string deviceName = "Arm";
+            if (bHaptics.IsDeviceConnected(bHaptics.DeviceType.Tactosy_hands)) deviceName = "Hand";
+            string key = "Recoil" + deviceName + postfix;
+            bHaptics.SubmitRegistered(key, key, scaleOption, rotationFront);
+        }
+
+        public void hitArm(bool isRight)
+        {
+            float duration = 1.0f;
+            float intensity = 0.5f;
+            var scaleOption = new bHaptics.ScaleOption(intensity, duration);
+            var rotationFront = new bHaptics.RotationOption(0f, 0f);
+            string postfix = "_L";
+            if (isRight) { postfix = "_R"; }
+
+            string deviceName = "Hand";
+            if (bHaptics.IsDeviceConnected(bHaptics.DeviceType.Tactosy_arms)) deviceName = "Arm";
+            string key = "Recoil" + deviceName + postfix;
+            bHaptics.SubmitRegistered(key, key, scaleOption, rotationFront);
         }
 
         public void HeadShot(String key, float hitAngle)
