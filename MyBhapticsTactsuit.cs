@@ -111,7 +111,7 @@ namespace MyBhapticsTactsuit
             bHaptics.SubmitRegistered(key, key, scaleOption, rotationOption);
         }
 
-        public void Recoil(string weaponName, bool isRightHand, float intensity = 1.0f)
+        public void Recoil(string weaponName, bool isRightHand, bool block = false, float intensity = 1.0f)
         {
             // weaponName is a parameter that will go into the vest feedback pattern name
             // isRightHand is just which side the feedback is on
@@ -137,6 +137,32 @@ namespace MyBhapticsTactsuit
             bHaptics.SubmitRegistered(keyVest, keyVest, scaleOption, rotationFront);
         }
 
+        public void Spell(string spellName, bool isRightHand)
+        {
+            // weaponName is a parameter that will go into the vest feedback pattern name
+            // isRightHand is just which side the feedback is on
+            // intensity should usually be between 0 and 1
+
+            float duration = 1.0f;
+            float intensity = 1.0f;
+            var scaleOption = new bHaptics.ScaleOption(intensity, duration);
+            // the function needs some rotation if you want to give the scale option as well
+            var rotationFront = new bHaptics.RotationOption(0f, 0f);
+            // make postfix according to parameter
+            string postfix = "_L";
+            if (isRightHand) { postfix = "_R"; }
+
+            // stitch together pattern names for Arm and Hand recoil
+            string keyHands = "Spell" + spellName + "Hand" + postfix;
+            string keyArm = "Spell" + spellName + "Arm" + postfix;
+            // vest pattern name contains the weapon name. This way, you can quickly switch
+            // between swords, pistols, shotguns, ... by just changing the shoulder feedback
+            // and scaling via the intensity for arms and hands
+            string keyVest = "Spell" + spellName + "Vest" + postfix;
+            bHaptics.SubmitRegistered(keyHands, keyHands, scaleOption, rotationFront);
+            bHaptics.SubmitRegistered(keyArm, keyArm, scaleOption, rotationFront);
+            bHaptics.SubmitRegistered(keyVest, keyVest, scaleOption, rotationFront);
+        }
 
         public void HeadShot(String key, float hitAngle)
         {
